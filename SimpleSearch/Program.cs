@@ -4,67 +4,78 @@ using System.Linq;
 
 namespace SimpleSearch
 {
+
     class Program
     {
-        const int countPrintNumber = 3;
+        private const int CountPrintNumber = 3;
+
+        /// <summary>
+        /// Метод.
+        /// </summary>
+        /// <param name="args">Аргументы метода.</param>
         static void Main(string[] args)
+        {
+
+
+            var numbers = GetValidInput("Введите целое число", IsValidRange)
+                    .Split(",")
+                    .Select(i => Math.Abs(int.Parse(i)))
+                    .OrderBy(i => i)
+                    .ToList();
+
+            var direction = GetValidInput("Веедите направленость \n0. Прямое направление \n1. Обратное направление", (template) => template.Trim().Equals("0") || template.Trim().Equals("1"));
+
+            var asc = direction.Equals("0");
+
+            var simpleNumbers = GetCollectionSimple(numbers, asc);
+
+            if (simpleNumbers.Count() < 3)
+            {
+                Console.WriteLine($"Нашли всего {simpleNumbers.Count()}");
+                Console.WriteLine($"Поробуйте другое число");
+            }
+            else
+            {
+                Print(simpleNumbers, asc);
+            }
+
+        }
+
+        static string GetValidInput(string question, Func<string, bool> validate)
         {
             while (true)
             {
-                Console.WriteLine("Веедите целлое число");
-                try
+                Console.WriteLine(question);
+
+                var userInput = Console.ReadLine();
+                if (validate(userInput))
                 {
-                    string[] userChoice = Console.ReadLine().Trim().Split(",");
-
-                    if (userChoice.Length > 2 || Convert.ToInt32(userChoice.ElementAt(0)) > Convert.ToInt32(userChoice.ElementAt(userChoice.Length - 1))) throw new ArgumentException();
-
-                    List<int> rangeNumber = userChoice.Select(c => Convert.ToInt32(c)).ToList();
-
-                    Console.WriteLine("Веедите направленость");
-                    Console.WriteLine("0. Прямое направление  ");
-                    Console.WriteLine("1. Обратное направление");
-
-                    int choicedirectio = Convert.ToInt32(Console.ReadLine());
-
-                    if (choicedirectio != 0 && choicedirectio != 1)
-                    {
-                        throw new FormatException();
-                    }
-
-                    bool directio = choicedirectio != 0;
-
-                    IEnumerable<int> collectionSimpelNuber = new List<int>();
-
-
-                    collectionSimpelNuber = GetCollectionSimpleNumbers(rangeNumber, directio);
-
-
-                    int sizeCollection = collectionSimpelNuber.Count();
-
-                    if (sizeCollection < countPrintNumber)
-                    {
-                        Console.WriteLine($"Найдено всего {sizeCollection}  \n");
-                        Console.WriteLine($"Поробуйте ввести другое число");
-                        continue;
-                    }
-
-                    Print(collectionSimpelNuber, directio);
-
+                    return userInput;
                 }
-                catch (FormatException)
-                {
-                    Console.WriteLine("Неверный формат ввода \n");
-                    continue;
-                }
-                catch (ArgumentException)
-                {
-                    Console.WriteLine("Неверный формат ввода убедитись , что вы вели два числа через ',' и первое число меньше второго \n");
-                    continue;
-                }
+
+                Console.WriteLine("Неверный формат ввода");
             }
         }
 
-        /*Обычный перебор */
+        private static bool IsValidRange(string template)
+        {
+            if (String.IsNullOrWhiteSpace(template)) return false;
+
+            var numbers = template.Split(",");
+
+            if (numbers.Length > 2) return false;
+
+            foreach (var number in numbers)
+            {
+                if (!int.TryParse(number, out _))
+                {
+                    return false;
+                }
+
+            }
+            return true;
+        }
+
         static bool IsSimpleNumber(int number)
         {
             if (number == 1) return false;
@@ -77,28 +88,6 @@ namespace SimpleSearch
                 }
             }
             return true;
-
-        }
-        /*Решето Эратосфена для массива*/
-        static IEnumerable<int> SieveEratosthenes(List<int> collection)
-        {
-            var numbers = new List<int>();
-            //заполнение списка числами от 2 до n-1
-            for (var i = 2; i < collection.Count() - 1; i++)
-            {
-                numbers.Add(i);
-            }
-
-            for (var i = 0; i < numbers.Count; i++)
-            {
-                for (var j = 2; j <= collection.Count(); j++)
-                {
-                    //удаляем кратные числа из списка
-                    collection.Remove(numbers[i] * j);
-                }
-            }
-
-            return collection;
         }
 
         static IEnumerable<int> GetCollectionSimpleNumberByNumber(int number, bool direction)
@@ -106,9 +95,9 @@ namespace SimpleSearch
             int count = 0;
             List<int> resultCollection = new List<int>();
 
-            while (count < countPrintNumber)
+            while (count < CountPrintNumber)
             {
-                if (direction)
+                if (!direction)
                 {
                     number--;
                 }
@@ -125,18 +114,38 @@ namespace SimpleSearch
             return resultCollection;
         }
 
-        static IEnumerable<int> GetCollectionSimpleNumbers(List<int> numbers, bool directio)
+        static IEnumerable<int> GetCollectionSimpleNumberByNumber(int minNumber, int maxNumber, bool direction)
+        {
+            int count = 0;
+            List<int> resultCollection = new List<int>();
+
+            var number = direction ? minNumber : maxNumber;
+
+            while (count < CountPrintNumber && number >= minNumber && number <= maxNumber)
+            {
+                if (!direction)
+                {
+                    number--;
+                }
+                else
+                {
+                    number++;
+                }
+                if (IsSimpleNumber(number))
+                {
+
+                    resultCollection.Add(number);
+                    count++;
+                }
+            }
+            return resultCollection;
+        }
+
+        static IEnumerable<int> GetCollectionSimple(List<int> numbers, bool directio)
         {
             if (numbers.Count() > 1)
             {
-                int max = numbers.ElementAt(numbers.Count() - 1);
-
-                for (int i = numbers.ElementAt(0); i < max; i++)
-                {
-                    numbers.Add(i);
-                }
-
-                return SieveEratosthenes(numbers);
+                return GetCollectionSimpleNumberByNumber(numbers[0], numbers[1], directio);
             }
             else
             {
@@ -146,35 +155,16 @@ namespace SimpleSearch
 
         static void Print(IEnumerable<int> collectionSimpelNumber, bool directio)
         {
-            if (!directio)
+            for (int i = 0; i < collectionSimpelNumber.Count(); i++)
             {
-                for (int i = 0; i < countPrintNumber; i++)
+                if (i == collectionSimpelNumber.Count() - 1)
                 {
-                    if (i == collectionSimpelNumber.Count() - 1)
-                    {
-                        Console.Write($"{collectionSimpelNumber.ElementAt(i)} \n");
-                    }
-                    else
-                    {
-                        Console.Write($"{collectionSimpelNumber.ElementAt(i)}, ");
-                    }
+                    Console.Write($"{collectionSimpelNumber.ElementAt(i)}\n ");
 
                 }
-            }
-            else
-            {
-                int j = 0;
-                for (int i = collectionSimpelNumber.Count() - 1; j < countPrintNumber; i--)
+                else
                 {
-                    if (j == countPrintNumber)
-                    {
-                        Console.Write($"{collectionSimpelNumber.ElementAt(i)} \n");
-                    }
-                    else
-                    {
-                        Console.Write($"{collectionSimpelNumber.ElementAt(i)}, ");
-                    }
-                    j++;
+                    Console.Write($"{collectionSimpelNumber.ElementAt(i)}, ");
                 }
             }
         }
