@@ -17,7 +17,7 @@ namespace SimpleSearch
         {
 
 
-            var numbers = GetValidInput("Введите целое число", IsValidRange)
+            var numbers = GetValidInput("Введите целое число", IsValidRange<bool>)
                     .Split(",")
                     .Select(i => Math.Abs(int.Parse(i)))
                     .OrderBy(i => i)
@@ -57,23 +57,23 @@ namespace SimpleSearch
             }
         }
 
-        private static bool IsValidRange(string template)
+        private static T IsValidRange<T>(string template)
         {
-            if (String.IsNullOrWhiteSpace(template)) return false;
+            if (String.IsNullOrWhiteSpace(template)) return (T)Convert.ChangeType(false, typeof(T));
 
             var numbers = template.Split(",");
 
-            if (numbers.Length > 2) return false;
+            if (numbers.Length > 2) return (T)Convert.ChangeType(false, typeof(T));
 
             foreach (var number in numbers)
             {
                 if (!int.TryParse(number, out _))
                 {
-                    return false;
+                    return (T)Convert.ChangeType(false, typeof(T));
                 }
 
             }
-            return true;
+            return (T)Convert.ChangeType(true, typeof(T));
         }
 
         static bool IsSimpleNumber(int number)
@@ -87,6 +87,7 @@ namespace SimpleSearch
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -104,6 +105,10 @@ namespace SimpleSearch
                 else
                 {
                     number++;
+                }
+                if (number <= 0)
+                {
+                    return resultCollection;
                 }
                 if (IsSimpleNumber(number))
                 {
